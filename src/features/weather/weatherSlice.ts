@@ -27,7 +27,7 @@ const initialState: WeatherState = {
 
 export const fetchWeather = createAsyncThunk(
   "weather/fetchWeather",
-  async (city: string, { rejectWithValue, getState }) => {
+  async (city: string, { rejectWithValue }) => {
     try {
       const options = {
         method: 'GET',
