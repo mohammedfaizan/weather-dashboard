@@ -34,7 +34,6 @@ const mockWeatherData = {
 export default function WeatherDashboard() {
   const [city, setCity] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const [isMockData, setIsMockData] = useState(true);
   const dispatch = useDispatch<AppDispatch>();
   const { data, loading, error, history } = useSelector(
     (state: RootState) => state.weather
@@ -45,7 +44,6 @@ export default function WeatherDashboard() {
     if (lastCity) {
       dispatch(fetchWeather(lastCity));
       setShowWelcome(false);
-      setIsMockData(false);
     } else {
       setShowWelcome(true);
     }
@@ -69,7 +67,6 @@ export default function WeatherDashboard() {
       dispatch(fetchWeather(city));
       setCity("");
       setShowWelcome(false);
-      setIsMockData(false);
     }
   };
 
@@ -77,7 +74,6 @@ export default function WeatherDashboard() {
     setCity(city);
     dispatch(fetchWeather(city));
     setShowWelcome(false);
-    setIsMockData(false);
   };
 
   const convertToCelsius = (fahrenheit: number) => {
