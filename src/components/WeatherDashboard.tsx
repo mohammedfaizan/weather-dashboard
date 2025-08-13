@@ -90,9 +90,17 @@ export default function WeatherDashboard() {
     const weatherIcon = weatherData.weather?.[0]?.icon;
     const tempC = weatherData.main?.temp ? convertToCelsius(weatherData.main.temp) : null;
     const feelsLikeC = weatherData.main?.feels_like ? convertToCelsius(weatherData.main.feels_like) : null;
+    const isSunny = weatherData.weather?.[0]?.main.toLowerCase().includes('clear');
+    
+    const cardStyle = {
+      background: isSunny 
+        ? 'linear-gradient(135deg, #fff9c4 0%, #fff59d 100%)' 
+        : 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+    };
 
     return (
-      <div className="relative overflow-hidden rounded-xl shadow-lg mb-6 group">
+      <div className="relative overflow-hidden rounded-xl shadow-lg mb-6 group" style={cardStyle}>
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110 h-full"
           style={{ 
