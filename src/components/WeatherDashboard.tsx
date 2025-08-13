@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchWeather, clearError } from "../features/weather/weatherSlice";
 import type { RootState, AppDispatch } from "../app/store";
 
-
 //mock data for welcome screen
 const mockWeatherData = {
   name: "Sunny City",
@@ -55,15 +54,12 @@ export default function WeatherDashboard() {
     }
   }, [data]);
 
-  useEffect(() => {
-    if (error) {
-      dispatch(clearError());
-    }
-  }, [city, dispatch, error]);
+  
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (city.trim()) {
+      dispatch(clearError());
       dispatch(fetchWeather(city));
       setCity("");
       setShowWelcome(false);
@@ -71,6 +67,7 @@ export default function WeatherDashboard() {
   };
 
   const handleHistoryClick = (city: string) => {
+    dispatch(clearError());
     setCity(city);
     dispatch(fetchWeather(city));
     setShowWelcome(false);
@@ -205,6 +202,8 @@ export default function WeatherDashboard() {
     );
   };
 
+  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
@@ -213,6 +212,7 @@ export default function WeatherDashboard() {
         </h1>
         <p className="text-center text-blue-600 mb-8">Check the weather anywhere in the world</p>
         
+
         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3 mb-8">
           <input
             type="text"
@@ -228,20 +228,22 @@ export default function WeatherDashboard() {
                 ? 'bg-blue-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0'
             }`}
-            disabled={loading}
+            disabled={loading || !city.trim()}
           >
             {loading ? 'Searching...' : 'Search'}
           </button>
         </form>
 
+        {/* Error message - will show when there's an error */}
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded animate-fade-in">
             <p className="font-bold">Error</p>
             <p>{error}</p>
           </div>
         )}
 
-        {showWelcome ? (
+        {/* Show welcome screen only if there's no error and no data */}
+        {showWelcome && !data?.name && !error && (
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome to Weather Dashboard</h2>
             <p className="text-gray-600 mb-6">Search for a city to see the current weather</p>
@@ -270,9 +272,12 @@ export default function WeatherDashboard() {
               </div>
             )}
           </div>
-        ) : (
+        )}
+
+        {/* Show weather card if we have valid data */}
+        {data?.name && !error && (
           <>
-            {data && renderWeatherCard(data)}
+            {renderWeatherCard(data)}
             {history.length > 0 && (
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-700 mb-3">Recent Searches</h3>

@@ -8,7 +8,6 @@ interface WeatherState {
   history: string[];
 }
 
-
 const loadHistory = (): string[] => {
   try {
     const saved = localStorage.getItem('weatherHistory');
@@ -28,7 +27,7 @@ const initialState: WeatherState = {
 
 export const fetchWeather = createAsyncThunk(
   "weather/fetchWeather",
-  async (city: string, { rejectWithValue }) => {
+  async (city: string, { rejectWithValue, getState }) => {
     try {
       const options = {
         method: 'GET',
@@ -45,7 +44,6 @@ export const fetchWeather = createAsyncThunk(
       };
       const response = await axios.request(options);
       
-      // Checking for valid data
       if (!response.data || !response.data.name) {
         throw new Error('Invalid response from weather service');
       }
@@ -53,11 +51,17 @@ export const fetchWeather = createAsyncThunk(
       return response.data;
     } catch (error: any) {
       if (error.response) {
-        return rejectWithValue('City not found. Please try another location.');
+        if (error.response.status === 429) {
+          return rejectWithValue('API rate limit exceeded. Please wait a moment before trying again.');
+        } else if (error.response.status === 404) {
+          return rejectWithValue('City not found. Please try another location.');
+        } else {
+          return rejectWithValue('Unable to fetch weather data. Please try again later.');
+        }
       } else if (error.request) {
-        return rejectWithValue('Unable to connect to the weather service.');
+        return rejectWithValue('Unable to connect to the weather service. Please check your internet connection.');
       } else {
-        return rejectWithValue('An unexpected error occurred.');
+        return rejectWithValue('An unexpected error occurred. Please try again.');
       }
     }
   }
@@ -83,11 +87,9 @@ const weatherSlice = createSlice({
         state.error = null;
         const city = action.payload.name;
         
-        
         if (city && !state.history.includes(city)) {
-          const newHistory = [city, ...state.history].slice(0, 5); 
+          const newHistory = [city, ...state.history].slice(0, 5);
           state.history = newHistory;
-          
           
           try {
             localStorage.setItem('weatherHistory', JSON.stringify(newHistory));
@@ -98,7 +100,7 @@ const weatherSlice = createSlice({
       })
       .addCase(fetchWeather.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string || 'Failed to fetch weather data';
+        state.error = action.payload as string || 'An error occurred while fetching weather data';
       });
   },
 });
