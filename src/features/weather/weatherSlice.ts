@@ -8,38 +8,69 @@ interface WeatherState {
   history: string[];
 }
 
+
+const loadHistory = (): string[] => {
+  try {
+    const saved = localStorage.getItem('weatherHistory');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    console.error('Failed to load history from localStorage', e);
+    return [];
+  }
+};
+
 const initialState: WeatherState = {
   data: null,
   loading: false,
   error: null,
-  history: [],
+  history: loadHistory(),
 };
 
 export const fetchWeather = createAsyncThunk(
   "weather/fetchWeather",
-  async (city: string) => {
-    const options = {
-      method: 'GET',
-      url: 'https://open-weather13.p.rapidapi.com/city',
-      params: {
-        city: city,
-        lang: 'EN',
-        units: 'metric'
-      },
-      headers: {
-        'x-rapidapi-key': import.meta.env.VITE_OPENWEATHER_API_KEY,
-        'x-rapidapi-host': 'open-weather13.p.rapidapi.com'
+  async (city: string, { rejectWithValue }) => {
+    try {
+      const options = {
+        method: 'GET',
+        url: 'https://open-weather13.p.rapidapi.com/city',
+        params: {
+          city: city,
+          lang: 'EN',
+          units: 'metric'
+        },
+        headers: {
+          'x-rapidapi-key': import.meta.env.VITE_OPENWEATHER_API_KEY,
+          'x-rapidapi-host': 'open-weather13.p.rapidapi.com'
+        }
+      };
+      const response = await axios.request(options);
+      
+      // Checking for valid data
+      if (!response.data || !response.data.name) {
+        throw new Error('Invalid response from weather service');
       }
-    };
-    const response = await axios.request(options);
-    return response.data;
+      
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        return rejectWithValue('City not found. Please try another location.');
+      } else if (error.request) {
+        return rejectWithValue('Unable to connect to the weather service.');
+      } else {
+        return rejectWithValue('An unexpected error occurred.');
+      }
+    }
   }
 );
 
 const weatherSlice = createSlice({
   name: "weather",
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchWeather.pending, (state) => {
@@ -51,16 +82,26 @@ const weatherSlice = createSlice({
         state.data = action.payload;
         state.error = null;
         const city = action.payload.name;
-        if (!state.history.includes(city)) {
-          state.history.unshift(city);
-          if (state.history.length > 5) state.history.pop();
+        
+        
+        if (city && !state.history.includes(city)) {
+          const newHistory = [city, ...state.history].slice(0, 5); 
+          state.history = newHistory;
+          
+          
+          try {
+            localStorage.setItem('weatherHistory', JSON.stringify(newHistory));
+          } catch (e) {
+            console.error('Failed to save history to localStorage', e);
+          }
         }
       })
       .addCase(fetchWeather.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch weather";
+        state.error = action.payload as string || 'Failed to fetch weather data';
       });
   },
 });
 
+export const { clearError } = weatherSlice.actions;
 export default weatherSlice.reducer;
